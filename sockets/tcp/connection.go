@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/mastercactapus/chrome/internal/util"

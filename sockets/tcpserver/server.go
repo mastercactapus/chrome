@@ -43,7 +43,7 @@ func NewServer(socketID int) *Server {
 	return &Server{
 		SocketID:   socketID,
 		eAccept:    util.NewEventListener("chrome.sockets.tcpServer.onAccept"),
-		eAcceptErr: util.NewEventListener("chrome.sockets.tcpServer.onAcceptErr"),
+		eAcceptErr: util.NewEventListener("chrome.sockets.tcpServer.onAcceptError"),
 	}
 }
 

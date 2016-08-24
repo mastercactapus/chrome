@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/mastercactapus/chrome/internal/util"
@@ -93,7 +94,11 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) Listen(laddr string) error {
-	host, port, err := net.SplitHostPort(laddr)
+	host, portStr, err := net.SplitHostPort(laddr)
+	if err != nil {
+		return err
+	}
+	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package tcp
 import (
 	"fmt"
 	"net"
+	"strconv"
 
 	"github.com/mastercactapus/chrome/internal/util"
 )
@@ -12,7 +13,11 @@ func Dial(network, address string) (net.Conn, error) {
 		return nil, fmt.Errorf("unsupported network type: %s", network)
 	}
 
-	host, port, err := net.SplitHostPort(address)
+	host, portStr, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return nil, err
 	}

@@ -46,7 +46,6 @@ type Connection struct {
 	w            *io.PipeWriter
 	eRecv        *util.EventListener
 	eRecvErr     *util.EventListener
-	closeCh      chan struct{}
 	closed       bool
 }
 
@@ -81,7 +80,6 @@ func NewConnection(connectionID int) *Connection {
 		w:            w,
 		eRecv:        util.NewEventListener("chrome.serial.onReceive"),
 		eRecvErr:     util.NewEventListener("chrome.serial.OnReceiveError"),
-		closeCh:      make(chan struct{}),
 	}
 	go c.loop()
 	return c
@@ -92,14 +90,18 @@ func (c *Connection) loop() {
 mainLoop:
 	for {
 		select {
-		case <-c.closeCh:
-			break mainLoop
 		case o = <-c.eRecv.C:
+			if o == nil {
+				break mainLoop
+			}
 			if o[0].Get("connectionId").Int() != c.ConnectionID {
 				continue
 			}
 			c.w.Write(js.Global.Get("Uint8Array").New(o[0].Get("data")).Interface().([]byte))
 		case o = <-c.eRecvErr.C:
+			if o == nil {
+				break mainLoop
+			}
 			if o[0].Get("connectionId").Int() != c.ConnectionID {
 				continue
 			}
@@ -108,8 +110,6 @@ mainLoop:
 			break mainLoop
 		}
 	}
-	c.eRecv.Close()
-	c.eRecvErr.Close()
 }
 
 // GetInfo is analogous to [chrome.serial.getInfo](https://developer.chrome.com/apps/serial#method-getInfo)
@@ -179,8 +179,8 @@ func (c *Connection) Close() error {
 		return nil
 	}
 	c.closed = true
-	// wait for closeCh to be picked up before we call disconnect
-	c.closeCh <- struct{}{}
+	c.eRecv.Close()
+	c.eRecvErr.Close()
 	util.Call("chrome.serial.disconnect", c.ConnectionID)
 	c.w.Close()
 	return nil

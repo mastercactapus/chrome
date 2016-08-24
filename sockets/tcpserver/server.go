@@ -14,7 +14,6 @@ type Server struct {
 	SocketID   int
 	eAccept    *util.EventListener
 	eAcceptErr *util.EventListener
-	closeCh    chan struct{}
 	closed     bool
 }
 
@@ -44,7 +43,6 @@ func NewServer(socketID int) *Server {
 		SocketID:   socketID,
 		eAccept:    util.NewEventListener("chrome.sockets.tcpServer.onAccept"),
 		eAcceptErr: util.NewEventListener("chrome.sockets.tcpServer.onAcceptErr"),
-		closeCh:    make(chan struct{}, 1),
 	}
 }
 

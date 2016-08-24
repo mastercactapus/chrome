@@ -18,7 +18,6 @@ type Connection struct {
 	w        *io.PipeWriter
 	eRecv    *util.EventListener
 	eRecvErr *util.EventListener
-	closeCh  chan struct{}
 }
 
 func NewConnection(socketID int) *Connection {
@@ -29,7 +28,6 @@ func NewConnection(socketID int) *Connection {
 		w:        w,
 		eRecv:    util.NewEventListener("chrome.sockets.tcp.onReceive"),
 		eRecvErr: util.NewEventListener("chrome.sockets.tcp.onReceiveError"),
-		closeCh:  make(chan struct{}),
 	}
 	go s.loop()
 	return s
@@ -40,25 +38,26 @@ func (c *Connection) loop() {
 mainLoop:
 	for {
 		select {
-		case <-c.closeCh:
-			break mainLoop
 		case o = <-c.eRecv.C:
+			if o == nil {
+				break mainLoop
+			}
 			if o[0].Get("socketId").Int() != c.SocketID {
 				continue
 			}
-			c.w.Write(js.Global.Get("Uint8Array").New(o[1]).Interface().([]byte))
+			c.w.Write(js.Global.Get("Uint8Array").New(o[0].Get("data")).Interface().([]byte))
 		case o = <-c.eRecvErr.C:
+			if o == nil {
+				break mainLoop
+			}
 			if o[0].Get("socketId").Int() != c.SocketID {
 				continue
 			}
 			err := fmt.Errorf("receive error, code: %d", o[0].Get("resultCode").Int())
 			c.w.CloseWithError(err)
-			c.Close()
-			break mainLoop
+			go c.Close()
 		}
 	}
-	c.eRecv.Close()
-	c.eRecvErr.Close()
 }
 
 func (c *Connection) Close() error {
@@ -67,8 +66,8 @@ func (c *Connection) Close() error {
 	}
 	c.closed = true
 
-	// wait for closeCh to be picked up before we call tcp.close
-	c.closeCh <- struct{}{}
+	c.eRecv.Close()
+	c.eRecvErr.Close()
 	util.Call("chrome.sockets.tcp.close", c.SocketID)
 	c.w.Close()
 	return nil

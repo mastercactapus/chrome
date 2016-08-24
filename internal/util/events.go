@@ -8,9 +8,10 @@ import (
 )
 
 type EventListener struct {
-	C   chan []*js.Object
-	obj *js.Object
-	fn  *js.Object
+	C    chan []*js.Object
+	obj  *js.Object
+	fn   *js.Object
+	name string
 }
 
 func NewEventListener(eventName string) *EventListener {
@@ -20,13 +21,17 @@ func NewEventListener(eventName string) *EventListener {
 		o = o.Get(key)
 	}
 	l := &EventListener{
-		C:   make(chan []*js.Object, 1),
-		obj: o,
+		C:    make(chan []*js.Object, 1),
+		obj:  o,
+		name: eventName,
 	}
 	l.fn = js.MakeFunc(func(this *js.Object, args []*js.Object) interface{} {
 		l.C <- args
 		return nil
 	})
+	if o == js.Undefined {
+		panic(eventName + " is undefined. Check your manifest.json for permissions")
+	}
 	o.Call("addListener", l.fn)
 	return l
 }

@@ -17,7 +17,7 @@ func Call(method string, args ...interface{}) ([]*js.Object, error) {
 	var err error
 	args = append(args, js.MakeFunc(func(this *js.Object, args []*js.Object) interface{} {
 		lastErr := js.Global.Get("chrome").Get("runtime").Get("lastError")
-		if lastErr != nil {
+		if lastErr != js.Undefined {
 			err = errors.New(lastErr.Get("message").String())
 		}
 		ch <- args

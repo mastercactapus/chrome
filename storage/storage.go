@@ -17,6 +17,62 @@ type areaManaged struct{ area }
 
 type area string
 
+type Change struct {
+	OldVal string
+	NewVal string
+}
+
+type Listener struct {
+	C        chan map[string]*Change
+	l        *util.EventListener
+	areaName string
+}
+
+func (l *Listener) Close() error {
+	defer close(l.C)
+	return l.Close()
+}
+
+func (s area) NewListener() *Listener {
+	l := &Listener{
+		areaName: string(s),
+		C:        make(chan map[string]*Change),
+		l:        util.NewEventListener("chrome.storage.onChange"),
+	}
+	go l.loop()
+	return l
+}
+
+func makeChangeMap(o *js.Object) map[string]*Change {
+	keys := js.Keys(o)
+
+	m := make(map[string]*Change, len(keys))
+	for _, key := range keys {
+		oldVal := o.Get(key).Get("oldValue")
+		newVal := o.Get(key).Get("newValue")
+		var oldStr, newStr string
+		if oldVal != js.Undefined {
+			oldStr = oldVal.String()
+		}
+		if newVal != js.Undefined {
+			newStr = newVal.String()
+		}
+		m[key] = &Change{
+			OldVal: oldStr,
+			NewVal: newStr,
+		}
+	}
+	return m
+}
+func (l *Listener) loop() {
+	for o := range l.l.C {
+		if o[1].String() != l.areaName {
+			continue
+		}
+		l.C <- makeChangeMap(o[0])
+	}
+}
+
 func (s areaLocal) QuotaBytes() int {
 	return s.getIntProp("QUOTA_BYTES")
 }

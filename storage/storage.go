@@ -37,7 +37,7 @@ func (s area) NewListener() *Listener {
 	l := &Listener{
 		areaName: string(s),
 		C:        make(chan map[string]*Change),
-		l:        util.NewEventListener("chrome.storage.onChange"),
+		l:        util.NewEventListener("chrome.storage.onChanged"),
 	}
 	go l.loop()
 	return l

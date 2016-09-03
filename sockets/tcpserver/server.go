@@ -68,8 +68,13 @@ func (s *Server) AcceptTCP() (*tcp.Connection, error) {
 			}
 			clientSocketId := args[0].Get("clientSocketId").Int()
 			// tcpServer pauses new sockets by default, so unpause it once constructed
-			defer util.Call("chrome.sockets.tcp.setPaused", clientSocketId, false)
-			return tcp.NewConnection(clientSocketId), nil
+			c := tcp.NewConnection(clientSocketId)
+			_, err := util.Call("chrome.sockets.tcp.setPaused", clientSocketId, false)
+			if err != nil {
+				c.Close()
+				return nil, err
+			}
+			return c, nil
 		case args = <-s.eAcceptErr.C:
 			if args == nil {
 				return nil, errors.New("closed")

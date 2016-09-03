@@ -29,8 +29,9 @@ type Listener struct {
 }
 
 func (l *Listener) Close() error {
-	defer close(l.C)
-	return l.Close()
+	err := l.l.Close()
+	close(l.C)
+	return err
 }
 
 func (s area) NewListener() *Listener {

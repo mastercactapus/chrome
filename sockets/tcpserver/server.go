@@ -98,6 +98,9 @@ func (s *Server) Listen(laddr string) error {
 	if err != nil {
 		return err
 	}
+	if host == "" {
+		host = "0.0.0.0"
+	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return err

@@ -21,6 +21,9 @@ func Dial(network, address string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	if host == "" {
+		host = "127.0.0.1"
+	}
 	args, err := util.Call("chrome.sockets.tcp.create")
 	if err != nil {
 		return nil, err
